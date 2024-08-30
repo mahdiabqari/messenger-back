@@ -11,15 +11,32 @@ const register = async (req, res, next) => {
     };
 
     const checkinfo = joi.object(dispatch).validate(req.body);
-    if (checkinfo.error) return res.status(404).send(checkinfo.error.details[0].message);
+    if (checkinfo.error) {
+        console.log('Validation error:', checkinfo.error.details[0].message);
+        return res.status(401).send(checkinfo.error.details[0].message);
+    }
 
-    const checkemail = await model.GetEmailUser(req.body.email);
-    if (checkemail) return res.status(404).send('You already registered');
+    try {
+        const checkname = await model.GetNameUser(req.body.name);
+        console.log('Check email result:', checkname);
 
-
-    const user = await model.RegisterUser( req.body.name , req.body.email , req.body.password );
-    const token = jwt.sign( { id: checkemail.id } , process.env.SECRET_KEY )
-    return res.header('Auth' , token).send('Wellcome');
+        if (!checkname) {
+            const user = await model.RegisterUser(req.body.name, req.body.email, req.body.password);
+            if (user) {
+                console.log('User registered successfully:', req.body.email);
+                return res.json({ id: user.id, message: 'Welcome' }); // برگرداندن آیدی کاربر
+            } else {
+                console.log('User registration failed:', req.body.email);
+                return res.status(500).send('Registration failed');
+            }
+        } else {
+            console.log('User-name already registered:', req.body.email);
+            return res.status(401).send('You already registered');
+        }
+    } catch (error) {
+        console.error('Error during registration:', error);
+        return res.status(500).send('An error occurred during registration');
+    }
 };
 
 const login = async (req, res, next) => {
@@ -36,19 +53,41 @@ const login = async (req, res, next) => {
     const checkuser = await model.GetEmailUser(req.body.email);
     if (!checkuser) {
         console.log('User not found:', req.body.email);
-        return res.status(404).send('Please Sign in');
+        return res.status(404).send('Please sign up');
     }
 
-    if ( req.body.password !== checkuser.password ) {
+    if (req.body.password !== checkuser.password) {
         console.log('Invalid password for user:', req.body.email);
         return res.status(401).send('Invalid password');
     }
 
+    const token = jwt.sign({id: checkuser.id} , process.env.SECRET_KEY )
     console.log('Password is valid for user:', req.body.email);
-    const token = jwt.sign({ id: checkuser.id }, process.env.SECRET_KEY);
-    return res.send({ message: 'Welcome!', token });
-
+    return res.header('Authorization',token).json({ id: checkuser.id, message: 'Welcome' }); // برگرداندن آیدی کاربر
 };
 
+const SearchUsers = async (req, res, next) => {
+    try {
+      const result = await model.Search(req.query.name);
+      if (result.length > 0) {
+        return res.json(result);
+      } else {
+        return res.status(404).send('No users found');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      return res.status(500).send('Internal server error');
+    }
+};
 
-module.exports = { register , login }
+const getUsersWithMessages = async (req, res, next) => {
+    try {
+        const result = await model.getUsersWithMessages(req.params.userId)
+        return res.json(result)
+    } catch (error) {
+      console.error('Error:', error);
+      return res.status(500).send('Internal server error');
+    }
+};
+
+module.exports = { register , login , SearchUsers , getUsersWithMessages }

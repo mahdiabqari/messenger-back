@@ -1,11 +1,20 @@
-const sql = require('mysql2')
-require('dotenv').config()
+const sql = require('mysql2');
+require('dotenv').config();
 
 const pool = sql.createPool({
-    host : process.env.host ,
-    user: process.env.user ,
-    password: process.env.password ,
-    database: process.env.database ,
-}).promise()
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+}).promise();
 
-module.exports = pool
+pool.getConnection((err, connection) => {
+    if (err) {
+        console.error('Error connecting to the database:', err);
+        return;
+    }
+    console.log('Connected to the database');
+    connection.release();
+});
+
+module.exports = pool;
