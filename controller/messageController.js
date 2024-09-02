@@ -31,7 +31,6 @@ const Sendmessage = async (req, res, next) => {
 
 const Recivemessage = async (req, res, next) => {
   try {
-    console.log(req.params.senderId , req.params.receiverId)
     const result = await model.Recive(req.params.senderId , req.params.receiverId);
     if (result.length > 0) {
       return res.json(result);

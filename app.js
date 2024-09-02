@@ -4,6 +4,8 @@ const cors = require('cors')
 require('dotenv').config()
 const userRouter = require('./router/userRouter')
 const messageRouter =  require('./router/messageRouter')
+//Test
+const MessageController = require('./controller/messageController');
 
 app.use(express.json())
 app.use(cors())
@@ -14,8 +16,12 @@ app.use( '/users' , userRouter )
 //messages
 app.use( '/messages' , messageRouter )
 
-const port = process.env.port || 5000;
+app.get('/' , ( req , res ) => {
+    res.send('HELLO THERE IS NO PROBLEM HERE')
+})
 
-app.listen(5000, () => {
-    console.log('Server is running on port 5000');
+const port = process.env.PORT || 3000;
+
+app.listen(port, () => {
+    console.log(`Server is running on port : ${port}`);
 });
